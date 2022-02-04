@@ -2,6 +2,7 @@
 import argparse
 import concurrent.futures
 from io import BytesIO
+import sys
 from lxml import html
 import os
 from PIL import Image
@@ -13,7 +14,36 @@ AGENT = 'Mozilla/5.0 (X11; CrOS x86_64 14324.56.0) AppleWebKit/537.36 (KHTML, li
 TMP_DIR = '/tmp/comics'
 HEADERS = {'User-Agent': AGENT}
 VERBOSE = False
+MESSAGE = """
+    _________                _____
+    __  ____/____________ ______(_)______
+    _  /    _  __ \_  __ `__ \_  /_  ___/
+    / /___  / /_/ /  / / / / /  / / /__
+    \____/  \____//_/ /_/ /_//_/  \___/
 
+    _____________
+    ___  __ \__(_)____________________________
+    __  /_/ /_  /___  __ \__  __ \  _ \_  ___/
+    _  _, _/_  / __  /_/ /_  /_/ /  __/  /
+    /_/ |_| /_/  _  .___/_  .___/\___//_/
+                 /_/     /_/
+"""
+
+
+class CrArgumentParser(argparse.ArgumentParser):
+
+    def print_help(self, file=None):
+        if file is None:
+            file = sys.stdout
+        file.write(MESSAGE+"\n")
+        super().print_help(file=file)
+
+    def print_usage(self, file=None):
+        if file is None:
+            file = sys.stdout
+        file.write(MESSAGE+"\n")
+        super().print_usage(file=file)
+        
 
 class ComicBook:
     headers = HEADERS
@@ -90,11 +120,11 @@ def fetch_comic(comicBook: ComicBook, overwrite: bool):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Download series of comic books from readcomics.ru.')
+    parser = CrArgumentParser(description='Download series of comic books from readcomics.ru.')
     parser.add_argument('url', type=str, nargs=1, help='readcomics.ru URL to parse')
-    parser.add_argument('--overwrite', '-o', action='store_true', default=False, help='overwrite existing files')
-    parser.add_argument('--single', '-s', action='store_true', default=False, help='process a single comic')
-    parser.add_argument('--verbose', '-v', action='store_true', default=False, help='verbose output')
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='overwrite existing files')
+    parser.add_argument('-s', '--single', action='store_true', default=False, help='process a single comic')
+    parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
     args = parser.parse_args()
     VERBOSE = args.verbose
 
