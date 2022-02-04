@@ -2,14 +2,11 @@
 import argparse
 import concurrent.futures
 from io import BytesIO
-from pydoc import describe
 from lxml import html
 import os
 from PIL import Image
 import requests
 import shutil
-import sys
-from urllib import request
 from zipfile import ZipFile
 
 AGENT = 'Mozilla/5.0 (X11; CrOS x86_64 14324.56.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4692.70 Safari/537.36'
