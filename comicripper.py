@@ -94,7 +94,9 @@ if __name__ == '__main__':
     parser.add_argument('url', type=str, nargs=1, help='readcomics.ru URL to parse')
     parser.add_argument('--overwrite', '-o', action='store_true', default=False, help='overwrite existing files')
     parser.add_argument('--single', '-s', action='store_true', default=False, help='process a single comic')
+    parser.add_argument('--verbose', '-v', action='store_true', default=False, help='verbose output')
     args = parser.parse_args()
+    VERBOSE = args.verbose
 
     comicsUrl = args.url[0]
     if args.single:
