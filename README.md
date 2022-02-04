@@ -1,1 +1,4 @@
-# comicripper
+# Comic Ripper
+
+## Install
+pip install .
