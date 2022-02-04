@@ -36,12 +36,6 @@ class ComicBook:
         return cls(url, title, pages)
 
 
-parser = argparse.ArgumentParser(description='Download series of comic books from readcomics.ru.')
-parser.add_argument('url', type=str, nargs=1, help='readcomics.ru URL to parse')
-parser.add_argument('--overwrite', '-o', action='store_true', default=False, help='overwrite existing files')
-parser.add_argument('--single', '-s', action='store_true', default=False, help='process a single comic')
-args = parser.parse_args()
-
 def fetch_page(pageNum: int, url: str, tmp_dir: str) -> str:
     file = '%s/%04d.jpg' % (tmp_dir, pageNum)
     r = requests.get(url, headers=HEADERS)
@@ -51,9 +45,9 @@ def fetch_page(pageNum: int, url: str, tmp_dir: str) -> str:
     return file
 
 
-def fetch_comic(comicBook: ComicBook):
+def fetch_comic(comicBook: ComicBook, overwrite: bool):
     zipFile = '%s.cbz' % comicBook.title
-    if os.path.exists(zipFile) and not args.overwrite:
+    if os.path.exists(zipFile) and not overwrite:
         print('%s exists, skipping...' % zipFile)
         return
     
@@ -95,15 +89,27 @@ def fetch_comic(comicBook: ComicBook):
     shutil.rmtree(tmp_dir)
 
 
-comicsUrl = args.url[0]
-if args.single:
-    fetch_comic(comicsUrl)
-else:
-    page = requests.get(comicsUrl)
-    tree = html.fromstring(page.content)
-    comicUrls = tree.xpath('.//ul[@class="chapters"]/li/h5/a/@href')
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_url = {executor.submit(fetch_comic, ComicBook.fromUrl(comicUrl)): comicUrl for comicUrl in comicUrls}
-        for future in concurrent.futures.as_completed(future_to_url):
-            comicUrl = future_to_url[future]
-            print('%s finished...' % comicUrl)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Download series of comic books from readcomics.ru.')
+    parser.add_argument('url', type=str, nargs=1, help='readcomics.ru URL to parse')
+    parser.add_argument('--overwrite', '-o', action='store_true', default=False, help='overwrite existing files')
+    parser.add_argument('--single', '-s', action='store_true', default=False, help='process a single comic')
+    args = parser.parse_args()
+
+    comicsUrl = args.url[0]
+    if args.single:
+        fetch_comic(ComicBook.fromUrl(comicsUrl), args.overwrite)
+    else:
+        page = requests.get(comicsUrl)
+        tree = html.fromstring(page.content)
+        comicUrls = tree.xpath('.//ul[@class="chapters"]/li/h5/a/@href')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_url = {
+                executor.submit(
+                    fetch_comic,
+                    ComicBook.fromUrl(comicUrl),
+                    args.overwrite): comicUrl for comicUrl in comicUrls
+            }
+            for future in concurrent.futures.as_completed(future_to_url):
+                comicUrl = future_to_url[future]
+                print('%s finished...' % comicUrl)
