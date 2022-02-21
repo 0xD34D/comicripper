@@ -87,12 +87,16 @@ def fetch_comic(comicBook: ComicBook, overwrite: bool):
     print('Processing %d pages for %s' % (comicBook.numPages, comicBook.title))
 
     with ZipFile(zipFile, 'w') as cbz:
+        pages = []
         for i in range(0, comicBook.numPages):
             pageName = comicBook.pages[i].xpath('@alt')[0]
             pageUrl = comicBook.pages[i].xpath('@data-src')[0].strip()
             page = fetch_page(pageUrl)
-            if VERBOSE: print('Adding %s to %s' % (pageName, zipFile))
-            cbz.writestr('%04d.jpg' % (i+1), page)
+            pages.append((page, pageName, i))
+            if VERBOSE: print('Downloading %s...' % pageName)
+        for page in pages:
+            if VERBOSE: print('Adding %s to %s' % (page[1], zipFile))
+            cbz.writestr('%04d.jpg' % page[2], page[0])
 
 
 if __name__ == '__main__':
