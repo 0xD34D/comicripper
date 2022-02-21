@@ -7,11 +7,9 @@ from lxml import html
 import os
 from PIL import Image
 import requests
-import shutil
 from zipfile import ZipFile
 
 AGENT = 'Mozilla/5.0 (X11; CrOS x86_64 14324.56.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4692.70 Safari/537.36'
-TMP_DIR = '/tmp/comics'
 HEADERS = {'User-Agent': AGENT}
 VERBOSE = False
 MESSAGE = """
@@ -66,13 +64,12 @@ class ComicBook:
         return cls(url, title, pages)
 
 
-def fetch_page(pageNum: int, url: str, tmp_dir: str) -> str:
-    file = '%s/%04d.jpg' % (tmp_dir, pageNum)
+def fetch_page(url: str) -> bytes:
     r = requests.get(url, headers=HEADERS)
-    img = Image.open(BytesIO(r.content))
-    img.convert('RGB').save(file, quality=50)
-
-    return file
+    img = Image.open(BytesIO(r.content)).convert('RGB')
+    with BytesIO() as output:
+        img.save(output, quality=50, format='JPEG')
+        return output.getvalue()
 
 
 def fetch_comic(comicBook: ComicBook, overwrite: bool):
@@ -86,37 +83,16 @@ def fetch_comic(comicBook: ComicBook, overwrite: bool):
         print('Could not find any pages for %s' % comicBook.title)
         exit()
 
-    # create a tmp directory for storing pages
-    tmp_dir = os.path.join(TMP_DIR, comicBook.title)
-    os.makedirs(tmp_dir)
-
     # download and zip up the pages
     print('Processing %d pages for %s' % (comicBook.numPages, comicBook.title))
 
-    pagesToZip = []
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_url = {}
+    with ZipFile(zipFile, 'w') as cbz:
         for i in range(0, comicBook.numPages):
             pageName = comicBook.pages[i].xpath('@alt')[0]
             pageUrl = comicBook.pages[i].xpath('@data-src')[0].strip()
-            future_to_url[executor.submit(fetch_page, i + 1, pageUrl, tmp_dir)] = (pageName, pageUrl)
-        for future in concurrent.futures.as_completed(future_to_url):
-            pageName, pageUrl = future_to_url[future]
-            try:
-                if VERBOSE: print('Fetched %s from %s' % (pageName, pageUrl))
-                pagesToZip.append(future.result())
-            except Exception as exc:
-                print('%r generated an exception: %s' % (pageUrl, exc))
-
-    print('Zipping pages for %s into %s' % (comicBook.title, zipFile))
-    pagesToZip.sort()
-    with ZipFile(zipFile, 'w') as cbz:
-        for file in pagesToZip:
-            if VERBOSE: print('Adding %s to zip' % file)
-            cbz.write(file, arcname=os.path.basename(file), compresslevel=9)
-
-    # remove our tmp directory now that we are all done
-    shutil.rmtree(tmp_dir)
+            page = fetch_page(pageUrl)
+            if VERBOSE: print('Adding %s to %s' % (pageName, zipFile))
+            cbz.writestr('%04d.jpg' % (i+1), page)
 
 
 if __name__ == '__main__':
