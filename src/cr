@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+from ComicBook import ComicBook, fetchPages
 import concurrent.futures
-from io import BytesIO
 import sys
 from lxml import html
 import os
-from PIL import Image
 import requests
 from zipfile import ZipFile
 
@@ -29,47 +28,17 @@ MESSAGE = """
 
 
 class CrArgumentParser(argparse.ArgumentParser):
-
     def print_help(self, file=None):
         if file is None:
             file = sys.stdout
-        file.write(MESSAGE+"\n")
+        file.write(MESSAGE + '\n')
         super().print_help(file=file)
 
     def print_usage(self, file=None):
         if file is None:
             file = sys.stdout
-        file.write(MESSAGE+"\n")
+        file.write(MESSAGE + '\n')
         super().print_usage(file=file)
-        
-
-class ComicBook:
-    headers = HEADERS
-
-    def __init__(self, url, title, pages):
-        self.title = title
-        self.url = url
-        self.pages = pages
-        self.numPages = len(pages)
-
-    @classmethod
-    def fromUrl(cls, url):
-        page = requests.get(url, headers=cls.headers)
-        tree = html.fromstring(page.content)
-        title = tree.find('.//title').text
-        # strip off the garbage at the end of the comic book title
-        title = " ".join(title.split()).split(' - Page ')[0].replace(':', ' -')
-        pages = tree.xpath('.//div[@id="all"]')[0].xpath('.//img')
-
-        return cls(url, title, pages)
-
-
-def fetch_page(url: str) -> bytes:
-    r = requests.get(url, headers=HEADERS)
-    img = Image.open(BytesIO(r.content)).convert('RGB')
-    with BytesIO() as output:
-        img.save(output, quality=50, format='JPEG')
-        return output.getvalue()
 
 
 def fetch_comic(comicBook: ComicBook, overwrite: bool):
@@ -77,7 +46,7 @@ def fetch_comic(comicBook: ComicBook, overwrite: bool):
     if os.path.exists(zipFile) and not overwrite:
         print('%s exists, skipping...' % zipFile)
         return
-    
+
     # no pages means no comic book for you!
     if comicBook.numPages <= 0:
         print('Could not find any pages for %s' % comicBook.title)
@@ -87,24 +56,35 @@ def fetch_comic(comicBook: ComicBook, overwrite: bool):
     print('Processing %d pages for %s' % (comicBook.numPages, comicBook.title))
 
     with ZipFile(zipFile, 'w') as cbz:
-        pages = []
-        for i in range(0, comicBook.numPages):
-            pageName = comicBook.pages[i].xpath('@alt')[0]
-            pageUrl = comicBook.pages[i].xpath('@data-src')[0].strip()
-            page = fetch_page(pageUrl)
-            pages.append((page, pageName, i))
-            if VERBOSE: print('Downloading %s...' % pageName)
+        pages = fetchPages(comicBook)
         for page in pages:
-            if VERBOSE: print('Adding %s to %s' % (page[1], zipFile))
-            cbz.writestr('%04d.jpg' % page[2], page[0])
+            if VERBOSE:
+                print('Adding %s to %s' % (page.name, zipFile))
+            cbz.writestr('%04d.jpg' % page.number, page.image)
 
 
 if __name__ == '__main__':
-    parser = CrArgumentParser(description='Download series of comic books from readcomics.ru.')
+    parser = CrArgumentParser(
+        description='Download series of comic books from readcomics.ru.'
+    )
     parser.add_argument('url', type=str, nargs=1, help='readcomics.ru URL to parse')
-    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='overwrite existing files')
-    parser.add_argument('-s', '--single', action='store_true', default=False, help='process a single comic')
-    parser.add_argument('-v', '--verbose', action='store_true', default=False, help='verbose output')
+    parser.add_argument(
+        '-o',
+        '--overwrite',
+        action='store_true',
+        default=False,
+        help='overwrite existing files',
+    )
+    parser.add_argument(
+        '-s',
+        '--single',
+        action='store_true',
+        default=False,
+        help='process a single comic',
+    )
+    parser.add_argument(
+        '-v', '--verbose', action='store_true', default=False, help='verbose output'
+    )
     args = parser.parse_args()
     VERBOSE = args.verbose
 
@@ -118,9 +98,9 @@ if __name__ == '__main__':
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_url = {
                 executor.submit(
-                    fetch_comic,
-                    ComicBook.fromUrl(comicUrl),
-                    args.overwrite): comicUrl for comicUrl in comicUrls
+                    fetch_comic, ComicBook.fromUrl(comicUrl), args.overwrite
+                ): comicUrl
+                for comicUrl in comicUrls
             }
             for future in concurrent.futures.as_completed(future_to_url):
                 comicUrl = future_to_url[future]
