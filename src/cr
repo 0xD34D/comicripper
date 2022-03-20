@@ -42,8 +42,8 @@ class CrArgumentParser(argparse.ArgumentParser):
         super().print_usage(file=file)
 
 
-def ripComic(comicBook: ComicBook, overwrite: bool):
-    zipFile = '%s.cbz' % comicBook.title
+def ripComic(comicBook: ComicBook, overwrite: bool, path: str):
+    zipFile = os.path.abspath(path) + os.path.sep + '%s.cbz' % comicBook.title
     if os.path.exists(zipFile) and not overwrite:
         print('%s exists, skipping...' % zipFile)
         return
@@ -67,10 +67,12 @@ def ripComic(comicBook: ComicBook, overwrite: bool):
 if __name__ == '__main__':
     parser = CrArgumentParser(
         description='Download series of comic books from readcomics.ru.')
-    parser.add_argument('url',
-                        type=str,
-                        nargs=1,
-                        help='readcomics.ru URL to parse')
+    parser.add_argument(
+        'url',
+        type=str,
+        nargs=1,
+        help='readcomics.ru URL to parse',
+    )
     parser.add_argument(
         '-o',
         '--overwrite',
@@ -79,23 +81,34 @@ if __name__ == '__main__':
         help='overwrite existing files',
     )
     parser.add_argument(
+        '-p',
+        '--path',
+        type=str,
+        nargs=1,
+        default=None,
+        help='path to output to',
+    )
+    parser.add_argument(
         '-s',
         '--single',
         action='store_true',
         default=False,
         help='process a single comic',
     )
-    parser.add_argument('-v',
-                        '--verbose',
-                        action='store_true',
-                        default=False,
-                        help='verbose output')
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        default=False,
+        help='verbose output',
+    )
     args = parser.parse_args()
     VERBOSE = args.verbose
 
     comicsUrl = args.url[0]
+    path = '' if args.path is None else args.path[0]
     if args.single:
-        ripComic(ComicBook.fromUrl(comicsUrl), args.overwrite)
+        ripComic(ComicBook.fromUrl(comicsUrl), args.overwrite, path)
     else:
         page = requests.get(comicsUrl)
         tree = html.fromstring(page.content)
@@ -103,7 +116,7 @@ if __name__ == '__main__':
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_url = {
                 executor.submit(ripComic, ComicBook.fromUrl(comicUrl),
-                                args.overwrite): comicUrl
+                                args.overwrite, path): comicUrl
                 for comicUrl in comicUrls
             }
             for future in concurrent.futures.as_completed(future_to_url):
