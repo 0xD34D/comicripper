@@ -60,7 +60,9 @@ def ripComic(comicBook: ComicBook, overwrite: bool, path: str):
         comicBook.fetchPages()
         for page in comicBook.pages:
             if VERBOSE:
-                print(f'Adding {page.name} to {zipFile}')
+                print(
+                    f'Adding page [{page.number+1}/{comicBook.numPages}] to \'{os.path.basename(zipFile)}\''
+                )
             cbz.writestr(f'{page.number:04}.jpg', page.image)
 
 
