@@ -10,11 +10,12 @@ HEADERS = {'User-Agent': AGENT}
 class ComicBook:
     headers = HEADERS
 
-    def __init__(self, url: str, title: str, pages: list[str]):
+    def __init__(self, url: str, title: str, pageUrls: list[str]):
         self.title = title
         self.url = url
-        self.pages = pages
-        self.numPages = len(pages)
+        self.pagesElements = pageUrls
+        self.numPages = len(pageUrls)
+        self.pages = []
 
     @classmethod
     def fromUrl(cls, url: str):
@@ -26,6 +27,11 @@ class ComicBook:
         pages = tree.xpath('.//div[@id="all"]')[0].xpath('.//img')
 
         return cls(url, title, pages)
+
+    def fetchPages(self):
+        for i in range(0, self.numPages):
+            page = ComicPage.fromComicBook(self, i)
+            self.pages.append(page)
 
 
 class ComicPage:
@@ -46,16 +52,9 @@ class ComicPage:
 
     @classmethod
     def fromComicBook(cls, comicBook, pageNum):
-        pageName = comicBook.pages[pageNum].xpath('@alt')[0]
-        pageUrl = comicBook.pages[pageNum].xpath('@data-src')[0].strip()
+        pageName = comicBook.pagesElements[pageNum].xpath('@alt')[0]
+        pageUrl = comicBook.pagesElements[pageNum].xpath(
+            '@data-src')[0].strip()
         page = ComicPage.fetchPage(pageUrl)
 
         return cls(page, pageName, pageNum)
-
-
-def fetchPages(comicBook: ComicBook) -> list[ComicPage]:
-    pages = []
-    for i in range(0, comicBook.numPages):
-        page = ComicPage.fromComicBook(comicBook, i)
-        pages.append(page)
-    return pages
