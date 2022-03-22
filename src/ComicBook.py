@@ -58,3 +58,11 @@ class ComicPage:
         page = ComicPage.fetchPage(pageUrl)
 
         return cls(page, pageName, pageNum)
+
+
+def fetchComicBookUrls(comicsUrl: str) -> list[str]:
+    page = requests.get(comicsUrl)
+    tree = html.fromstring(page.content)
+    comicUrls = tree.xpath('.//ul[@class="chapters"]/li/h5/a/@href')
+
+    return comicUrls
