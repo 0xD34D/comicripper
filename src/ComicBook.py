@@ -8,7 +8,6 @@ HEADERS = {'User-Agent': AGENT}
 
 
 class ComicBook:
-    headers = HEADERS
 
     def __init__(self, url: str, title: str, pageUrls: list[str]):
         self.title = title
@@ -19,7 +18,7 @@ class ComicBook:
 
     @classmethod
     def fromUrl(cls, url: str):
-        page = requests.get(url, headers=cls.headers)
+        page = requests.get(url, headers=HEADERS)
         tree = html.fromstring(page.content)
         title = tree.find('.//title').text
         # strip off the garbage at the end of the comic book title
@@ -35,7 +34,6 @@ class ComicBook:
 
 
 class ComicPage:
-    headers = HEADERS
 
     def __init__(self, pageImage, pageName, pageNumber):
         self.name = pageName
