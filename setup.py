@@ -5,10 +5,11 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='Comic Ripper',
-    version='0.1',
+    version='0.3',
     scripts=[
         'src/cr',
         'src/ComicBook.py',
+        'src/versioning.py',
     ],
     author="Clark Scheff",
     author_email="clark@scheffsblend.com",
