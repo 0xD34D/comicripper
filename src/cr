@@ -8,6 +8,7 @@ from zipfile import ZipFile
 
 
 class CrArgumentParser(argparse.ArgumentParser):
+    # pyright: reportInvalidStringEscapeSequence=false
     msg = """
     _________                _____
     __  ____/____________ ______(_)______
