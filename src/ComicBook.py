@@ -1,3 +1,4 @@
+import concurrent.futures
 from io import BytesIO
 from lxml import html
 import requests
@@ -27,10 +28,20 @@ class ComicBook:
 
         return cls(url, title, pages)
 
-    def fetchPages(self):
-        for i in range(0, self.numPages):
-            page = ComicPage.fromComicBook(self, i)
-            self.pages.append(page)
+    def fetchPages(self, verbose: bool):
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_page = {
+                executor.submit(ComicPage.fromComicBook, self, i): i
+                for i in range(0, self.numPages)
+            }
+            for future in concurrent.futures.as_completed(future_to_page):
+                self.pages.append(future.result())
+                pageNum = future_to_page[future]
+                if verbose:
+                    print(
+                        f'Downloaded page {pageNum+1}/{self.numPages} of {self.title}'
+                    )
+            self.pages.sort(key=lambda x: x.number)
 
 
 class ComicPage:

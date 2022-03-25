@@ -55,7 +55,7 @@ def ripComic(comicBook: ComicBook,
     print(f'Processing {comicBook.numPages} pages for {comicBook.title}')
 
     with ZipFile(zipFile, 'w') as cbz:
-        comicBook.fetchPages()
+        comicBook.fetchPages(verboseLogging)
         for page in comicBook.pages:
             if verboseLogging:
                 print(
