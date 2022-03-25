@@ -9,7 +9,6 @@ setuptools.setup(
     scripts=[
         'src/cr',
         'src/ComicBook.py',
-        'src/versioning.py',
     ],
     author="Clark Scheff",
     author_email="clark@scheffsblend.com",
