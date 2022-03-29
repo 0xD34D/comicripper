@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from ansimarkup import ansiprint as print
 import argparse
 from ComicBook import ComicBook, fetchComicBookUrls
 import concurrent.futures
@@ -43,23 +44,25 @@ def ripComic(comicBook: ComicBook,
              verboseLogging: bool = False):
     zipFile = os.path.abspath(path) + os.path.sep + f'{comicBook.title}.cbz'
     if os.path.exists(zipFile) and not overwrite:
-        print(f'{zipFile} exists, skipping')
+        print(f'<b><i>{zipFile}</i></b> exists, skipping')
         return
 
     # no pages means no comic book for you!
     if comicBook.numPages <= 0:
-        print(f'Could not find any pages for {comicBook.title}')
+        print(f'Could not find any pages for <b><i>{comicBook.title}</i></b>')
         exit()
 
     # download and zip up the pages
-    print(f'Processing {comicBook.numPages} pages for {comicBook.title}')
+    print(
+        f'Processing {comicBook.numPages} pages for <b><i>{comicBook.title}</i></b>'
+    )
 
     with ZipFile(zipFile, 'w') as cbz:
         comicBook.fetchPages(verboseLogging)
         for page in comicBook.pages:
             if verboseLogging:
                 print(
-                    f'Adding page [{page.number+1}/{comicBook.numPages}] to \'{os.path.basename(zipFile)}\''
+                    f'Adding page <b,w,>[</b,w,><b,g,>{page.number+1}</b,g,><b,r,>/</b,r,><b,g,>{comicBook.numPages}</b,g,><b,w,>]</b,w,> to <b><i>{os.path.basename(zipFile)}</i></b>'
                 )
             cbz.writestr(f'{page.number:04}.jpg', page.image)
 
@@ -119,4 +122,4 @@ if __name__ == '__main__':
             }
             for future in concurrent.futures.as_completed(future_to_url):
                 comicUrl = future_to_url[future]
-                print(f'{comicUrl} finished...')
+                print(f'<b><i>{comicUrl}</i></b> finished...')

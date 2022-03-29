@@ -1,3 +1,4 @@
+from ansimarkup import ansiprint as print
 import concurrent.futures
 from io import BytesIO
 from lxml import html
@@ -39,7 +40,7 @@ class ComicBook:
                 pageNum = future_to_page[future]
                 if verbose:
                     print(
-                        f'Downloaded page {pageNum+1}/{self.numPages} of {self.title}'
+                        f'Downloaded page <b,w,>[</b,w,><b,g,>{pageNum+1}</b,g,><b,r,>/</b,r,><b,g,>{self.numPages}</b,g,><b,w,>]</b,w,> of <b><i>{self.title}</i></b>'
                     )
             self.pages.sort(key=lambda x: x.number)
 

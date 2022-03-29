@@ -18,6 +18,7 @@ setuptools.setup(
     url="https://github.com/0xD34D/comicripper",
     packages=setuptools.find_packages(),
     install_requires=[
+        'ansimarkup',
         'lxml',
         'pillow',
         'requests',
